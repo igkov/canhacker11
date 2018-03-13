@@ -1,5 +1,4 @@
 #include <lpc11xx.h>
-#include "event.h"
 #include "timer.h"
 #include "mbus.h"
 #include "leds.h"
@@ -87,6 +86,8 @@ void mbus_init(int sniff) {
 		
 		// Enable EINT2:
 		NVIC_EnableIRQ(EINT2_IRQn);
+	} else {
+		NVIC_DisableIRQ(EINT2_IRQn);		
 	}
 }
 
@@ -161,6 +162,7 @@ void PIOINT2_IRQHandler(void) {
 			led_green(0);
 			//LPC_UART->THR  = 'U';
 			fifo_put(&fifo_out, 'U');
+			fifo_put(&fifo_out, '\r');
 		} else {
 			led_green(1);
 			//LPC_UART->THR  = 'S';
