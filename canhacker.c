@@ -158,7 +158,7 @@ int main (void) {
 				fifo_put(&fifo_out, BEL);
 				break;
 			}
-			fifo_puts(&fifo_out, "V0401\r");
+			fifo_puts(&fifo_out, "V0402\r");
 			break;
 		case 'v': // v[CR]
 			if (offset != 1) {
@@ -388,7 +388,29 @@ int main (void) {
 			}
 			offset = i/2;
 			// Отправка данных:
-			mbus_msend(cmd, offset);
+			if (offset == 0) {
+				mbus_init_DEV();
+			} else {
+				mbus_msend(cmd, offset);
+			}
+			// answer
+			fifo_put(&fifo_out, '\r');
+			break;
+		case 'x': //xaabbccddee...ff[CR]
+			if (interface_state_mbus == 0) {
+				fifo_put(&fifo_out, BEL);
+				break;
+			}
+			for (i = 1; i < offset; i += 2) {
+				int val = h2v((char*)&cmd[i]);
+				if (val == -1) {
+					break;
+				}
+				cmd[i/2] = val;
+			}
+			offset = i/2;
+			// Отправка данных:
+			mbus_msend_slave(cmd, offset);
 			// answer
 			fifo_put(&fifo_out, '\r');
 			break;

@@ -3,3 +3,5 @@
 *uvgui*
 *.bak
 *.dep
+mbus/*.exe
+mbus/*.txt

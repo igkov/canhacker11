@@ -152,6 +152,48 @@ void mbus_msend(uint8_t *data, int len) {
   	PIN_MCLOCK_IN;
   	PIN_MBUSY_IN;
 	delay_mks(100);
+	LPC_GPIO2->IC = LPC_GPIO2->MIS;
+  	NVIC_EnableIRQ(EINT2_IRQn);
+}
+
+void mbus_msend_slave(uint8_t *data, int len) {
+	int offset = 0;
+	uint8_t b;
+	while (PIN_MBUSY_GET == 1);
+	NVIC_DisableIRQ(EINT2_IRQn); 
+	delay_mks(15*1000);
+	PIN_MDATA_OUT;
+	PIN_MDATA_SET1;
+	PIN_MCLOCK_OUT;
+	PIN_MCLOCK_SET1;
+	//PIN_MBUSY_OUT;
+	//PIN_MBUSY_SET0;
+	delay_mks(10*1000);
+	while (offset < len) {
+		int n;
+		b = data[offset];
+	  	for(n = 7; n >= 0; n--) {
+	    	PIN_MCLOCK_SET0;
+	    	if(b & (1<<n)) {
+	      		PIN_MDATA_SET1;
+	    	} else {
+	      		PIN_MDATA_SET0;
+	    	}  
+			delay_mks(5);
+	    	PIN_MCLOCK_SET1;
+			delay_mks(7);
+	  	} 
+   		PIN_MDATA_SET1;
+		delay_mks(200);
+		offset++;
+	}
+	//delay_mks(10*1000);
+  	//PIN_MBUSY_SET1;
+	while (PIN_MBUSY_GET == 0);
+  	PIN_MDATA_IN;
+  	PIN_MCLOCK_IN;
+  	//PIN_MBUSY_IN;
+	//delay_mks(100);
   	NVIC_EnableIRQ(EINT2_IRQn);
 }
 
