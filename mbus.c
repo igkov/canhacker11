@@ -22,23 +22,40 @@ extern fifo_t fifo_out;
 	2. S - активный BUSY (=0).
 	3. U - неактивный BUSY (=1).
  */
+ 
+#define MBUS_SOFT_USE 1
 
 #define PIN_MBUSY_OUT    (LPC_GPIO2->DIR  |=  (1UL<<0))
 #define PIN_MBUSY_IN     (LPC_GPIO2->DIR  &= ~(1UL<<0))
+#if (MBUS_SOFT_USE == 1)
+#define PIN_MBUSY_SET0   {PIN_MBUSY_OUT; LPC_GPIO2->DATA &= ~(1UL<<0); }
+#define PIN_MBUSY_SET1   {PIN_MBUSY_IN;}
+#else
 #define PIN_MBUSY_SET0   (LPC_GPIO2->DATA &= ~(1UL<<0))
 #define PIN_MBUSY_SET1   (LPC_GPIO2->DATA |=  (1UL<<0))
+#endif
 #define PIN_MBUSY_GET    (LPC_GPIO2->DATA &   (1UL<<0))
 
 #define PIN_MCLOCK_OUT   (LPC_GPIO2->DIR  |=  (1UL<<1))
 #define PIN_MCLOCK_IN    (LPC_GPIO2->DIR  &= ~(1UL<<1))
+#if (MBUS_SOFT_USE == 1)
+#define PIN_MCLOCK_SET0  {PIN_MCLOCK_OUT; LPC_GPIO2->DATA &= ~(1UL<<1);}
+#define PIN_MCLOCK_SET1  {PIN_MCLOCK_IN;}
+#else
 #define PIN_MCLOCK_SET0  (LPC_GPIO2->DATA &= ~(1UL<<1))
 #define PIN_MCLOCK_SET1  (LPC_GPIO2->DATA |=  (1UL<<1))
+#endif
 #define PIN_MCLOCK_GET   (LPC_GPIO2->DATA &   (1UL<<1))
 
 #define PIN_MDATA_OUT    (LPC_GPIO2->DIR  |=  (1UL<<2))
 #define PIN_MDATA_IN     (LPC_GPIO2->DIR  &= ~(1UL<<2))
+#if (MBUS_SOFT_USE == 1)
+#define PIN_MDATA_SET0   {PIN_MDATA_OUT; LPC_GPIO2->DATA &= ~(1UL<<2);}
+#define PIN_MDATA_SET1   {PIN_MDATA_IN;}
+#else
 #define PIN_MDATA_SET0   (LPC_GPIO2->DATA &= ~(1UL<<2))
 #define PIN_MDATA_SET1   (LPC_GPIO2->DATA |=  (1UL<<2))
+#endif
 #define PIN_MDATA_GET    (LPC_GPIO2->DATA &   (1UL<<2))
 
 void mbus_init(int sniff) {
@@ -142,7 +159,7 @@ void mbus_msend(uint8_t *data, int len) {
 			delay_mks(7);
 	  	} 
    		PIN_MDATA_SET1;
-		delay_mks(200);
+		delay_mks(50);
 		offset++;
 	}
 	delay_mks(10*1000);

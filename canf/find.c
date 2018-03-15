@@ -81,6 +81,8 @@ int ev_can(int param) {
 		addr++;
 	}
 	
+	memset(packet, cnt, 8);
+	
 	// make command
 	sprintf(data, "t");
 	offset = 1;
@@ -96,6 +98,7 @@ int ev_can(int param) {
 	
 	printf("DATA: %s\r\n", data);
 	
+	cnt++;
 	if (cnt == 30) {
 		cnt = 0;
 		addr++;

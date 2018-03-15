@@ -100,7 +100,7 @@ int ev_mbus(int param) {
 		offset += 2;
 	}
 	sprintf(&data[offset], "\r");
-	//printf("DATA: %s\r\n", data);
+	printf("MBUS DATA: %s\r\n", data);
 	
 	// send
 	ret = com_putstr(&com, data);
@@ -133,7 +133,7 @@ int ev_can(int param) {
 		offset += 2;
 	}
 	sprintf(&data[offset], "\r");
-	//printf("DATA: %s\r\n", data);
+	//printf("CAN DATA: %s\r\n", data);
 	
 	// send
 	ret = com_putstr(&com, data);
@@ -153,6 +153,10 @@ int main(int argc, char **argv) {
 	unsigned char data[2048];
 	unsigned long size = 0;
 	unsigned long count = 0;
+	
+	if (argc > 1) {
+		ini_name = argv[1];
+	}
 	
 	GetPrivateProfileString("CANHACKER","INIT",     "0", str, 127, ini_name);
 	can_init = atoi(str);
@@ -498,18 +502,18 @@ int main(int argc, char **argv) {
 			ret = __LINE__;
 			goto ret_uninit;
 		}
-		if (ch != '\r') {
-			printf("ERROR: command \"I\" return error %d!\r\n", ch);
-			ret = __LINE__;
-			goto ret_uninit;
-		}
+		//if (ch != '\r') {
+		//	printf("ERROR: command \"I\" return error %d!\r\n", ch);
+		//	ret = __LINE__;
+		//	goto ret_uninit;
+		//}
 	}
 
 	// Init events system:
 	event_init();
 	
 	// Add async events:
-	for (i=1; i<999; i++) {
+	for (i=0; i<999; i++) {
 		if (mbus_init) {
 			if (mbus_list[i].delay >= 0) {
 				//printf("mbus %d present, len = %d, interval = %d, delay = %d, data = %02x %02x %02x %02x ...!\r\n", 
