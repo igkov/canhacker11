@@ -5,3 +5,5 @@
 *.dep
 mbus/*.exe
 mbus/*.txt
+canf/*.exe
+canf/*.txt
