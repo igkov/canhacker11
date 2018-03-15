@@ -25,34 +25,40 @@ extern fifo_t fifo_out;
  
 #define MBUS_SOFT_USE 1
 
-#define PIN_MBUSY_OUT    (LPC_GPIO2->DIR  |=  (1UL<<0))
-#define PIN_MBUSY_IN     (LPC_GPIO2->DIR  &= ~(1UL<<0))
 #if (MBUS_SOFT_USE == 1)
+#define PIN_MBUSY_OUT    
+#define PIN_MBUSY_IN     (LPC_GPIO2->DIR  &= ~(1UL<<0))
 #define PIN_MBUSY_SET0   {PIN_MBUSY_OUT; LPC_GPIO2->DATA &= ~(1UL<<0); }
 #define PIN_MBUSY_SET1   {PIN_MBUSY_IN;}
 #else
+#define PIN_MBUSY_OUT    (LPC_GPIO2->DIR  |=  (1UL<<0))
+#define PIN_MBUSY_IN     (LPC_GPIO2->DIR  &= ~(1UL<<0))
 #define PIN_MBUSY_SET0   (LPC_GPIO2->DATA &= ~(1UL<<0))
 #define PIN_MBUSY_SET1   (LPC_GPIO2->DATA |=  (1UL<<0))
 #endif
 #define PIN_MBUSY_GET    (LPC_GPIO2->DATA &   (1UL<<0))
 
-#define PIN_MCLOCK_OUT   (LPC_GPIO2->DIR  |=  (1UL<<1))
-#define PIN_MCLOCK_IN    (LPC_GPIO2->DIR  &= ~(1UL<<1))
 #if (MBUS_SOFT_USE == 1)
+#define PIN_MCLOCK_OUT   
+#define PIN_MCLOCK_IN    (LPC_GPIO2->DIR  &= ~(1UL<<1))
 #define PIN_MCLOCK_SET0  {PIN_MCLOCK_OUT; LPC_GPIO2->DATA &= ~(1UL<<1);}
 #define PIN_MCLOCK_SET1  {PIN_MCLOCK_IN;}
 #else
+#define PIN_MCLOCK_OUT   (LPC_GPIO2->DIR  |=  (1UL<<1))
+#define PIN_MCLOCK_IN    (LPC_GPIO2->DIR  &= ~(1UL<<1))
 #define PIN_MCLOCK_SET0  (LPC_GPIO2->DATA &= ~(1UL<<1))
 #define PIN_MCLOCK_SET1  (LPC_GPIO2->DATA |=  (1UL<<1))
 #endif
 #define PIN_MCLOCK_GET   (LPC_GPIO2->DATA &   (1UL<<1))
 
-#define PIN_MDATA_OUT    (LPC_GPIO2->DIR  |=  (1UL<<2))
-#define PIN_MDATA_IN     (LPC_GPIO2->DIR  &= ~(1UL<<2))
 #if (MBUS_SOFT_USE == 1)
+#define PIN_MDATA_OUT    
+#define PIN_MDATA_IN     (LPC_GPIO2->DIR  &= ~(1UL<<2))
 #define PIN_MDATA_SET0   {PIN_MDATA_OUT; LPC_GPIO2->DATA &= ~(1UL<<2);}
 #define PIN_MDATA_SET1   {PIN_MDATA_IN;}
 #else
+#define PIN_MDATA_OUT    (LPC_GPIO2->DIR  |=  (1UL<<2))
+#define PIN_MDATA_IN     (LPC_GPIO2->DIR  &= ~(1UL<<2))
 #define PIN_MDATA_SET0   (LPC_GPIO2->DATA &= ~(1UL<<2))
 #define PIN_MDATA_SET1   (LPC_GPIO2->DATA |=  (1UL<<2))
 #endif
@@ -111,6 +117,7 @@ void mbus_init(int sniff) {
 static uint8_t bdata = 0;
 static uint8_t boff = 0;
 
+#if 0
 //This is a function that sends a byte to the HU - (not using interrupts)
 void mbus_sendb(uint8_t b){
 	int n;
@@ -130,20 +137,21 @@ void mbus_sendb(uint8_t b){
   	PIN_MDATA_IN;
   	NVIC_EnableIRQ(EINT2_IRQn);
 }
+#endif
 
 void mbus_msend(uint8_t *data, int len) {
 	int offset = 0;
 	uint8_t b;
 	while (PIN_MBUSY_GET == 0);
 	NVIC_DisableIRQ(EINT2_IRQn); 
-	delay_mks(15*1000);
+	delay_mks(2*1000);
 	PIN_MDATA_OUT;
 	PIN_MDATA_SET1;
 	PIN_MCLOCK_OUT;
 	PIN_MCLOCK_SET1;
 	PIN_MBUSY_OUT;
 	PIN_MBUSY_SET0;
-	delay_mks(10*1000);
+	delay_mks(2*1000);
 	while (offset < len) {
 		int n;
 		b = data[offset];
@@ -154,15 +162,15 @@ void mbus_msend(uint8_t *data, int len) {
 	    	} else {
 	      		PIN_MDATA_SET0;
 	    	}  
-			delay_mks(5);
+			delay_mks(50);
 	    	PIN_MCLOCK_SET1;
-			delay_mks(7);
+			delay_mks(70);
 	  	} 
-   		PIN_MDATA_SET1;
-		delay_mks(50);
+   		//PIN_MDATA_SET1;
+		delay_mks(100);
 		offset++;
 	}
-	delay_mks(10*1000);
+	delay_mks(3*1000);
   	PIN_MBUSY_SET1;
 	delay_mks(100);
   	PIN_MDATA_IN;
@@ -178,14 +186,14 @@ void mbus_msend_slave(uint8_t *data, int len) {
 	uint8_t b;
 	while (PIN_MBUSY_GET == 1);
 	NVIC_DisableIRQ(EINT2_IRQn); 
-	delay_mks(15*1000);
+	delay_mks(2*1000);
 	PIN_MDATA_OUT;
 	PIN_MDATA_SET1;
 	PIN_MCLOCK_OUT;
 	PIN_MCLOCK_SET1;
 	//PIN_MBUSY_OUT;
 	//PIN_MBUSY_SET0;
-	delay_mks(10*1000);
+	delay_mks(1*1000);
 	while (offset < len) {
 		int n;
 		b = data[offset];
@@ -196,9 +204,9 @@ void mbus_msend_slave(uint8_t *data, int len) {
 	    	} else {
 	      		PIN_MDATA_SET0;
 	    	}  
-			delay_mks(5);
+			delay_mks(50);
 	    	PIN_MCLOCK_SET1;
-			delay_mks(7);
+			delay_mks(70);
 	  	} 
    		PIN_MDATA_SET1;
 		delay_mks(200);
@@ -264,8 +272,10 @@ void PIOINT2_IRQHandler(void) {
 void mbus_init_DEV(void) {
 	NVIC_DisableIRQ(EINT2_IRQn); 
 
+	while (PIN_MBUSY_GET == 0);
+	while (PIN_MBUSY_GET == 1);
 	while (PIN_MBUSY_GET == 0); 
-	delay_mks(10);
+	delay_mks(10*1000);
   
 	PIN_MBUSY_OUT;
 	PIN_MBUSY_SET0;

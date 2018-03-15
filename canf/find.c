@@ -70,7 +70,7 @@ int ev_can(int param) {
 	static uint8_t packet[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	static uint8_t len = 8;
 	static uint16_t addr = 0;
-	static uint16_t cnt = 0;
+	static uint16_t cnt = 'A';
 
 	unsigned char data[256];
 	int offset = 0;
@@ -98,12 +98,19 @@ int ev_can(int param) {
 	
 	printf("DATA: %s\r\n", data);
 	
+	addr++;
+	if (addr == 0xFFF) {
+		cnt++;
+		addr = 0;
+	}
+/*
 	cnt++;
 	if (cnt == 30) {
 		cnt = 0;
 		addr++;
 	}
-	
+*/
+
 	// send
 	ret = com_putstr(&com, data);
 	if (ret) {

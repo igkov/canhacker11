@@ -93,7 +93,11 @@ int ev_mbus(int param) {
 	count_mbus++;
 	
 	// make command
-	sprintf(data, "X");
+	if (mbus_busy == 1) {
+		sprintf(data, "x");
+	} else {
+		sprintf(data, "X");
+	}
 	offset = 1;
 	for (i=0; i<mbus_list[param].len; i++) {
 		sprintf(&data[offset], "%02x", mbus_list[param].data[i]);
@@ -157,6 +161,8 @@ int main(int argc, char **argv) {
 	if (argc > 1) {
 		ini_name = argv[1];
 	}
+	
+	printf("Loading \"%s\" config file!\r\n", ini_name);
 	
 	GetPrivateProfileString("CANHACKER","INIT",     "0", str, 127, ini_name);
 	can_init = atoi(str);
@@ -489,7 +495,7 @@ int main(int argc, char **argv) {
 	if (mbus_init) {
 		char ch;
 		// no DEV-signal
-		sprintf(data, "I%c%c\r", mbus_sniffer?'1':'0', '0');
+		sprintf(data, "I%c%c\r", mbus_sniffer?'1':'0', '1');
 		ret = com_putstr(&com, data);
 		if (ret) {
 			printf("ERROR: com_putstr(\"S%c\"):%d error %d\r\n", can_speed, __LINE__, ret);
