@@ -30,7 +30,7 @@ void ProtectDelay(void) {
 fifo_t fifo_in;
 uint8_t data_in[256] __align(4);
 fifo_t fifo_out;
-uint8_t data_out[1024] __align(4);
+uint8_t data_out[2048] __align(4);
 int interface_state = 0;
 int interface_state_mbus = 0;
 
@@ -104,9 +104,17 @@ void can_loopback(CAN_msg *canData) {
 	buf[offset++] = b2h((time)>>0);
 	buf[offset++] = '\r';
 	buf[offset++] = 0;
-	if(interface_state > 0) { 
-		// Отправляем данные:
-		fifo_puts(&fifo_out, buf);
+	if(interface_state > 0) {
+		int free;
+		free = fifo_avail_free(&fifo_out);
+		if (free >= strlen(buf)) {
+			// Отправляем данные:
+			fifo_puts(&fifo_out, buf);
+		} else 
+		if (free > 3) {
+			// Ошибка:
+			fifo_puts(&fifo_out, "OVF\r");
+		}
 		// Включаем светодиод:
 		led_green(1);
 	}

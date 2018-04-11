@@ -7,3 +7,5 @@ mbus/*.exe
 mbus/*.txt
 canf/*.exe
 canf/*.txt
+comlog/*.txt
+comlog/*.exe

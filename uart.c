@@ -6,9 +6,9 @@ uint8_t uart_tx_empty;
 extern fifo_t fifo_in;
 extern fifo_t fifo_out;
 
-void uart_init(uint32_t baudrate) {
-	uint32_t Fdiv;
+#define DLAB 0x80
 
+void uart_init(uint32_t baudrate) {
 	LPC_SYSCON->SYSAHBCLKCTRL |= (1<<16);
 
 	LPC_IOCON->PIO1_6 &= ~0x07;     /* UART I/O config */
@@ -21,11 +21,25 @@ void uart_init(uint32_t baudrate) {
 	LPC_SYSCON->SYSAHBCLKCTRL |= (1<<12); /* Enable UART clock */
 	LPC_SYSCON->UARTCLKDIV     = 0x1;     /* divided by 1 */
 
-	LPC_UART->LCR = 0x83;      /* 8 bits, no Parity, 1 Stop bit */
-	Fdiv = ((SystemCoreClock/LPC_SYSCON->UARTCLKDIV)/16)/baudrate; /*baud rate */
-	LPC_UART->DLM = Fdiv / 256;
-	LPC_UART->DLL = Fdiv % 256;
-	LPC_UART->LCR = 0x03;      /* DLAB = 0 */
+	if (baudrate == 256000) {
+		// FDR: 0-3bits - DIVADDVAL = 7
+		// FDR: 4-7bits - MULVAL = 15
+		// Fdiv = 8
+		LPC_UART->LCR = 0x03 | DLAB;      /* 8 bits, no Parity, 1 Stop bit */
+		LPC_UART->DLL = 8;
+		LPC_UART->DLM = 0;
+		LPC_UART->LCR &= ~DLAB;           /* DLAB = 0 */
+		LPC_UART->FDR = 0xF7;
+	} else {
+		uint32_t Fdiv;
+		Fdiv = ((SystemCoreClock/LPC_SYSCON->UARTCLKDIV)/16)/baudrate; /* baud rate */
+		LPC_UART->LCR = 0x03 | DLAB;      /* 8 bits, no Parity, 1 Stop bit */
+		LPC_UART->DLM = Fdiv / 256;
+		LPC_UART->DLL = Fdiv % 256;
+		LPC_UART->LCR &= ~DLAB;    /* DLAB = 0 */
+		LPC_UART->FDR = 0;
+	}
+
 	LPC_UART->FCR = 0x07;      /* Enable and reset TX and RX FIFO. */
 
 	/* Enable the UART Interrupt */
