@@ -22,27 +22,18 @@ void uart_init(uint32_t baudrate) {
 	LPC_SYSCON->UARTCLKDIV     = 0x1;     /* divided by 1 */
 
 	if (baudrate == 256000) {
-		//
-		// FDR: 
-		// 0-3bits - DIVADDVAL = 7
-		// 4-7bits - MULVAL = 15
-		// 
+		// FDR: 0-3bits - DIVADDVAL = 7
+		// FDR: 4-7bits - MULVAL = 15
 		// Fdiv = 8
-		//
-
 		LPC_UART->LCR = 0x03 | DLAB;      /* 8 bits, no Parity, 1 Stop bit */
 		LPC_UART->DLL = 8;
 		LPC_UART->DLM = 0;
 		LPC_UART->LCR &= ~DLAB;           /* DLAB = 0 */
-
 		LPC_UART->FDR = 0xF7;
-
-		//LPC_UART->DLL = 11;
-		//LPC_UART->DLM = 0;
-		//LPC_UART->FDR = 0xF1;
 	} else {
 		uint32_t Fdiv;
 		Fdiv = ((SystemCoreClock/LPC_SYSCON->UARTCLKDIV)/16)/baudrate; /* baud rate */
+		LPC_UART->LCR = 0x03 | DLAB;      /* 8 bits, no Parity, 1 Stop bit */
 		LPC_UART->DLM = Fdiv / 256;
 		LPC_UART->DLL = Fdiv % 256;
 		LPC_UART->LCR &= ~DLAB;    /* DLAB = 0 */
