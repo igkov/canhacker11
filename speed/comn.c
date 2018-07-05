@@ -44,7 +44,7 @@ int com_init(pcom_struct_t com, int com_number, DWORD baudrate) {
 	// Настройка таймаутов чтения/записи:
 	CommTimeouts.ReadIntervalTimeout         =    5;
 	CommTimeouts.ReadTotalTimeoutMultiplier  =    0;
-	CommTimeouts.ReadTotalTimeoutConstant    =    300;
+	CommTimeouts.ReadTotalTimeoutConstant    =    800;
 	CommTimeouts.WriteTotalTimeoutMultiplier =    0;
 	CommTimeouts.WriteTotalTimeoutConstant   =    0;
 	SetCommTimeouts(com->hcom, &CommTimeouts);

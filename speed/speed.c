@@ -58,7 +58,7 @@ SPEED_T list[] = {
 
 
 int main(int argc, char **argv) {
-	unsigned char data[2048];
+	unsigned char data[512];
 	unsigned long size = 0;
 	unsigned long count = 0;
 	int ret;
@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 	speed = 0;
 	while (list[speed].c) {
 		unsigned long realsize;
-	
+		
 		// Reset
 		ret = com_putstr(&com, "C\r");
 		if (ret) {
@@ -203,7 +203,7 @@ int main(int argc, char **argv) {
 		// Goto LISTEN mode (receive):
 		ret = com_putstr(&com, "L\r"); // start recv
 		if (ret) {
-			printf("ERROR: com_putstr(\"O\"):%d error %d\r\n", __LINE__, ret);
+			printf("ERROR: com_putstr(\"L\"):%d error %d\r\n", __LINE__, ret);
 			ret = __LINE__;
 			goto ret_point;
 		}
@@ -220,6 +220,7 @@ int main(int argc, char **argv) {
 		}
 
 		com_getblock_simple(&com, data, sizeof(data), &realsize);
+		//printf("realsize = %d, S%c speed = %s\r\n", realsize, list[speed].c, list[speed].name);
 		if (realsize > 16) {
 			break;
 		}
