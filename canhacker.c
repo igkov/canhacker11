@@ -133,7 +133,11 @@ int main (void) {
 	fifo_init(&fifo_out, data_out, sizeof(data_out));
 	// Инициализируем вспомогательную периферию:
 	leds_init();                              // LEDs initial
+#if 1 // STARDART SPEED
 	uart_init(115200);                        // UART initial
+#else // FAST SPEED
+	uart_init(256000);                        // UART initial
+#endif
 	// Основной цикл:
 	while (1) {
 		uint8_t ch;
