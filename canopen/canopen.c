@@ -515,7 +515,13 @@ no_read:
 	{
 		memset(data, 0, sizeof(data));
 		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
+		
+		// @TODO
+		printf("\r\n"); 
+		printf("ANSWER: %s\r\n", data); 
+		printf("strlen() = %d\r\n", strlen(data));
+		printf("\r\n"); 
+		// may be here received req...
 		
 		can_t packet;
 		can_decode(data, &packet);
