@@ -28,25 +28,27 @@ BOOL CtrlHandler( DWORD type ) {
 }
 
 void help(void) {
-	printf("canopen.exe PORT SPEED\r\n");
+	printf("canopen.exe PORT [FILENAME]\r\n");
 	printf("  PORT   - Decimal COM-port number\r\n");
-	printf("Sample: comlog.exe 9\r\n");
-	printf("  9 - COM9 open\r\n");
+	printf("Sample: comlog.exe 6 frw.bin\r\n");
+	printf("  6       - COM6 open\r\n");
+	printf("  frw.bin - optional file name\r\n");
+	printf("            (default loading test/test.bin)\r\n");
 	return;
 }
 
 int main(int argc, char **argv) {
-	unsigned char data[2048];
-	unsigned char frw[0x4000];
+	unsigned char data[2048];  // buffer for protocol i/o
+	unsigned char frw[0x8000]; // firmware image
 	unsigned long size = 0;
-	unsigned long count = 0;
-	int offset = 0;
+	uint32_t id = 0;
 	int ret;
 	int i;
 	int speed = '3'; // 100kbit/s
 	int port = 7;
-	char name[20];
 	char ch;
+	char *filename;
+	
 	SYSTEMTIME SystemTime;
 	// Parameters:
 	if (argc == 1) {
@@ -55,6 +57,11 @@ int main(int argc, char **argv) {
 	}
 	if (argc >= 2) {
 		port = atoi(argv[1]);
+	}
+	if (argc >= 3) {
+		filename = argv[2];
+	} else {
+		filename = "test/test.bin";
 	}
 	// Open port:
 	if (ret = com_init(&com, port, 115200)) {
@@ -214,23 +221,65 @@ no_init:
 		}
 		printf("id = %08x\r\n", id);
 	}
-
-	printf("Unlock\r\n");
-	// Send
-	ret = isp_unlock();
 	
+	switch (id) {
+	case 0x1421102B:
+		printf("Controller type: LPC11C12FBD48/301\r\n");
+		size = 0x4000;
+		break;
+	case 0x1440102B:
+		printf("Controller type: LPC11C14FBD48/301\r\n");
+		size = 0x8000;
+		break;
+	case 0x1431102B:
+		printf("Controller type: LPC11C22FBD48/301\r\n");
+		size = 0x4000;
+		break;
+	case 0x1430102B:
+		printf("Controller type: LPC11C24FBD48/301!\r\n");
+		size = 0x8000;
+		break;
+	default:
+		printf("Controller type: unknown!\r\n");
+		size = 0x0000;
+		goto ret_uninit;
+	}
+
 	if (1) {
 		FILE *f;
-		if ((f = fopen("test/test.bin", "rb")) == 0) {
+		int frw_size;
+		printf("Loading file \"%s\"\r\n", filename);
+		if ((f = fopen(filename, "rb")) == 0) {
 			printf("ERROR: fopen() error!\r\n");
 			com_deinit(&com);
 			return __LINE__;
 		} 
-		fread(frw, 1, 768, f);
-		fclose(f); 
+		frw_size = fread(frw, 1, 0x8000, f);
+		fclose(f);
 		
+		if (frw_size > size) {
+			printf("ERROR: firmware too big for this controller!\r\n");
+			goto ret_uninit;
+		}
+		
+		printf("Firmware size: %db\r\n", frw_size);
+		
+		size = frw_size;
+		if (size & 0xFF) {
+			memset(&frw[size], 0xFF, 0x100-(size & 0xFF));
+			size = (size & 0xFF00) + 0x100;
+		}
+		
+		// Set crc
+		printf("Setup CRC in firmware image...\r\n");
 		((uint32_t*)frw)[7] = -(((uint32_t*)frw)[0] + ((uint32_t*)frw)[1] + ((uint32_t*)frw)[2] + ((uint32_t*)frw)[3] + ((uint32_t*)frw)[4] + ((uint32_t*)frw)[5] + ((uint32_t*)frw)[6]);
 		printf("CRC = %08x;\r\n", ((uint32_t*)frw)[7]);
+	}
+	
+	printf("Unlock\r\n");
+	ret = isp_unlock();
+	if (ret) {
+		printf("isp_unlock() return %d\r\n", ret);
 	}
 	
 	printf("Erase Prepare\r\n");
@@ -245,30 +294,35 @@ no_init:
 		printf("isp_erase() return %d\r\n", ret);
 	}
 	
-	for (i=0; i < 768; i+=256) {
-		printf("Write %d\r\n", i);
-	
-		printf("Write to RAM\r\n");
+	for (i=0; i < size; i += 256) {
+		//printf("Write %d\r\n", i);
+		printf("Programming %d%%...\r", (int)((i*100)/size));
+		
+		//printf("Write to RAM\r\n");
 		ret = isp_write_ram(0x10000800, &frw[i], 256);
 		if (ret) {
 			printf("isp_write_ram() return %d\r\n", ret);
 			exit(0);
 		}
-		
-		printf("Write Prepare\r\n");
+		//printf("Write Prepare\r\n");
 		ret = isp_prepare(0, 7);
 		if (ret) {
 			printf("isp_prepare() return %d\r\n", ret);
 			exit(0);
 		}
-
-		printf("Copy RAM to Flash\r\n");
+		//printf("Copy RAM to Flash\r\n");
 		ret = isp_ram_to_flash(0x10000800, i, 256);
 		if (ret) {
 			printf("isp_ram_to_flash() return %d\r\n", ret);
 			exit(0);
 		}
+		//
+		// TODO: check write operation
+		//
 	}
+	
+	printf("\n");
+	printf("Program finish!\r\n");
 
 	// Exit:
 ret_ok:

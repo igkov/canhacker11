@@ -16,10 +16,10 @@ int can_send(pcan_t can_packet) {
 	int i;
 	int ret;
 	
-	printf("SEND DATA: ADDR=%04x LEN=%d DATA=%02x %02x %02x %02x %02x %02x %02x %02x\r\n",
-		can_packet->addr, can_packet->len, 
-		can_packet->data[0], can_packet->data[1], can_packet->data[2], can_packet->data[3], 
-		can_packet->data[4], can_packet->data[5], can_packet->data[6], can_packet->data[7]);
+	//printf("SEND DATA: ADDR=%04x LEN=%d DATA=%02x %02x %02x %02x %02x %02x %02x %02x\r\n",
+	//	can_packet->addr, can_packet->len, 
+	//	can_packet->data[0], can_packet->data[1], can_packet->data[2], can_packet->data[3], 
+	//	can_packet->data[4], can_packet->data[5], can_packet->data[6], can_packet->data[7]);
 
 	// make command
 	sprintf(data, "t");
@@ -80,10 +80,10 @@ int can_recv(pcan_t can_packet) {
 		can_packet->data[6] = ch2i(str[17]) * 16 + ch2i(str[18]);
 		can_packet->data[7] = ch2i(str[19]) * 16 + ch2i(str[20]);
 		
-		printf("RECV DATA: ADDR=%04x LEN=%d DATA=%02x %02x %02x %02x %02x %02x %02x %02x\r\n",
-			can_packet->addr, can_packet->len, 
-			can_packet->data[0], can_packet->data[1], can_packet->data[2], can_packet->data[3], 
-			can_packet->data[4], can_packet->data[5], can_packet->data[6], can_packet->data[7]);
+		//printf("RECV DATA: ADDR=%04x LEN=%d DATA=%02x %02x %02x %02x %02x %02x %02x %02x\r\n",
+		//	can_packet->addr, can_packet->len, 
+		//	can_packet->data[0], can_packet->data[1], can_packet->data[2], can_packet->data[3], 
+		//	can_packet->data[4], can_packet->data[5], can_packet->data[6], can_packet->data[7]);
 		
 		return 0;
 	} else {
