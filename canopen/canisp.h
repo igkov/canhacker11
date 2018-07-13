@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// ISP HIGH LEVEL:
+// High Level: ISP LCP interface
 
 int isp_get_partid(uint32_t *id);
 int isp_get_device_type(char *type);
@@ -16,7 +16,7 @@ int isp_ram_to_flash(uint32_t ram_addr, uint32_t flash_addr, int len);
 int isp_get_serial(uint32_t *data);
 int isp_go(uint32_t *addr, uint8_t mode);
 
-// CANOPEN LOW LEVEL:
+// Middle Level: CanOpen SDO processing:
 
 // Max data 4b
 int sdo_read(uint16_t index, uint8_t subindex, int len, uint8_t *data);
@@ -26,13 +26,13 @@ int sdo_write(uint16_t index, uint8_t subindex, int len, uint8_t *data);
 int sdo_seq_read(uint16_t index, uint8_t subindex, int len, uint8_t *data);
 int sdo_seq_write(uint16_t index, uint8_t subindex, int len, uint8_t *data);
 
-// CAN BUS LOW LEVEL:
+// Low level: CANBUS, Canhacker driver
 
 typedef struct {
 	int addr;
 	int len;
 	uint8_t data[8];
-} *pcan_t, can_t; 
+} *pcan_t, can_t;
 
 int can_send(pcan_t can_packet);
 int can_recv(pcan_t can_packet);

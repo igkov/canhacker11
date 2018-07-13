@@ -6,6 +6,10 @@
 
 extern com_struct_t com;
 
+//
+// Low level: CANHACKER interface:
+//
+
 int can_send(pcan_t can_packet) {
 	unsigned char data[128];
 	unsigned long offset = 0;
@@ -88,7 +92,7 @@ int can_recv(pcan_t can_packet) {
 }
 
 //
-//
+// Middle Level: CanOpen SDO processing
 //
 
 int sdo_write(uint16_t index, uint8_t subindex, int len, uint8_t *data) {
@@ -280,10 +284,10 @@ int sdo_seq_write(uint16_t index, uint8_t subindex, int len, uint8_t *data) {
 	
 	while (offset < len) {
 		// 
-		// NOTE
-		//
+		// NOTE / TODO / FIX
+		// 
 		// Почему-то загрузчик принимает только по 4 байта в каждой посылке...
-		//
+		// 
 		int size = (len - offset) > 4 ? 4 : (len - offset);
 		
 		memset(&packet, 0x00, sizeof(packet));
@@ -326,13 +330,13 @@ int sdo_seq_write(uint16_t index, uint8_t subindex, int len, uint8_t *data) {
 	return 0;
 }
 
-//
 // 
+// High Level: ISP LPC interface
 //
 
 int isp_get_partid(uint32_t *id) {
 	int ret;
-	ret = sdo_read(SDO_PART_ID, 4, (uint8_t*)&id);
+	ret = sdo_read(SDO_PART_ID, 4, (uint8_t*)id);
 	return ret;
 }
 
