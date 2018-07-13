@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <windows.h>
 #include "comn.h"
+#include "canisp.h"
 
 FILE *f;
 com_struct_t com;
@@ -34,6 +35,7 @@ void help(void) {
 	return;
 }
 
+#if 0
 typedef struct {
 	int addr;
 	int len;
@@ -116,6 +118,7 @@ int can_decode(char *str, pcan_t can_packet) {
 		return 1;
 	}
 }
+#endif
 
 int main(int argc, char **argv) {
 	unsigned char data[2048];
@@ -274,528 +277,84 @@ int main(int argc, char **argv) {
 		goto ret_point;
 	}
 no_init:
-#if 0
 	// Ctrl-C event:
 	if(SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE ) == FALSE) {
 		printf("ERROR: Control Handler not installed!\r\n"); 
 		ret = __LINE__;
 		goto ret_uninit;
 	}
-#endif
+	
+	printf("Read Device Type\r\n");
+	ret = isp_get_device_type(data);
+	if (ret) {
+		printf("isp_get_device_type() return %d\r\n", ret);
+	}
+
+	printf("Read Device ID\r\n");
+	{
+		uint32_t id;
+		ret = isp_get_partid(&id);
+		if (ret) {
+			printf("isp_get_partid() return %d\r\n", ret);
+		}
+		printf("id = %08x\r\n", id);
+	}
 
 	printf("Unlock\r\n");
 	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Unlock
-		packet.data[0] = 0x2B; // Command
-		packet.data[1] = 0x00; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x5A; // Data[0]
-		packet.data[5] = 0x5A; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-
-	printf("Memory Read Address (set)\r\n");
-	// Send
-	{
-		can_t packet;
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Memory Read Address (set)
-		packet.data[0] = 0x23; // Command
-		packet.data[1] = 0x10; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-
-	printf("Memory Read Length (set)\r\n");
-	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Memory Read Length (set)
-		packet.data[0] = 0x23; // Command
-		packet.data[1] = 0x11; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x40; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
+	ret = isp_unlock();
 	
-	printf("Read memory / Read Init Data\r\n");
-	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Read memory
-		packet.data[0] = 0x40; // Command
-		packet.data[1] = 0x50; // Index (Minor)
-		packet.data[2] = 0x1F; // Index (Major)
-		packet.data[3] = 0x01; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-	
-goto no_read;
-	offset = 0;
-	for (i = 0; offset < 0x4000-10; i += 4) {
-		printf("Read memory / Read SegmentData %d\r\n", i);
-		// Send
-		{
-			can_t packet;
-			
-			packet.addr = 0x600 + 0x7D;
-			packet.len = 8;
-			// Read memory
-			packet.data[0] = 0x60; // Command
-			
-			if (i%8 == 4) {
-				packet.data[0] |= 0x10; // flipped
-			}
-			
-			packet.data[1] = 0x00; // Index (Minor)
-			packet.data[2] = 0x00; // Index (Major)
-			packet.data[3] = 0x00; // Sub Index
-			packet.data[4] = 0x00; // Data[0]
-			packet.data[5] = 0x00; // Data[1]
-			packet.data[6] = 0x00; // Data[2]
-			packet.data[7] = 0x00; // Data[3]
-			
-			can_send(&packet);
-		}
-		// Receive:
-		{
-			memset(data, 0, sizeof(data));
-			com_getblock_simple(&com, data, sizeof(data), &size);
-			//printf("ANSWER: %s\r\n", data);
-			
-			can_t packet;
-			can_decode(data, &packet);
-			
-			if (packet.data[0] == 0x80) break;
-			if (term) break;
-			
-			memcpy(&frw[offset], &packet.data[1], 7);
-			offset+=7;
-		}
-	}
-	
-	{
+	if (1) {
 		FILE *f;
-		if ((f = fopen("out.bin", "wb+")) == 0) {
+		if ((f = fopen("test/test.bin", "rb")) == 0) {
 			printf("ERROR: fopen() error!\r\n");
 			com_deinit(&com);
 			return __LINE__;
 		} 
-		fwrite(frw, 1, offset, f);
+		fread(frw, 1, 768, f);
 		fclose(f); 
+		
+		((uint32_t*)frw)[7] = -(((uint32_t*)frw)[0] + ((uint32_t*)frw)[1] + ((uint32_t*)frw)[2] + ((uint32_t*)frw)[3] + ((uint32_t*)frw)[4] + ((uint32_t*)frw)[5] + ((uint32_t*)frw)[6]);
+		printf("CRC = %08x;\r\n", ((uint32_t*)frw)[7]);
+	}
+	
+	printf("Erase Prepare\r\n");
+	ret = isp_prepare(0, 7);
+	if (ret) {
+		printf("isp_prepare() return %d\r\n", ret);
 	}
 
-	if (term == 0) {
-		goto ret_ok;
+	printf("Erase\r\n");
+	ret = isp_erase(0, 7);
+	if (ret) {
+		printf("isp_erase() return %d\r\n", ret);
 	}
 	
+	for (i=0; i < 768; i+=256) {
+		printf("Write %d\r\n", i);
 	
-	
-	
-	
-no_read:
-	printf("Memory Write Address (set)\r\n");
-	// Send
-	{
-		can_t packet;
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Memory Read Address (set)
-		packet.data[0] = 0x23; // Command
-		packet.data[1] = 0x15; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0] // 0x10001000
-		packet.data[5] = 0x10; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x10; // Data[3]
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
+		printf("Write to RAM\r\n");
+		ret = isp_write_ram(0x10000800, &frw[i], 256);
+		if (ret) {
+			printf("isp_write_ram() return %d\r\n", ret);
+			exit(0);
+		}
 		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-	
-	//Try:
-	//TX: 67d 21 50 1f 01 00 00 00 00
-	//and receive:
-	//RX: 67d 60 50 1f 01 00 00 00 00
-	
-	printf("Memory write (Write Init Data)\r\n");
-	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		//
-		packet.data[0] = 0x21; // Command
-		packet.data[1] = 0x50; // Index (Minor)
-		packet.data[2] = 0x1f; // Index (Major)
-		packet.data[3] = 0x01; // Sub Index
-		packet.data[4] = 0x04; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		
-		// @TODO
-		printf("\r\n"); 
-		printf("ANSWER: %s\r\n", data); 
-		printf("strlen() = %d\r\n", strlen(data));
-		printf("\r\n"); 
-		// may be here received req...
-		
-		can_t packet;
-		can_decode(data, &packet);
+		printf("Write Prepare\r\n");
+		ret = isp_prepare(0, 7);
+		if (ret) {
+			printf("isp_prepare() return %d\r\n", ret);
+			exit(0);
+		}
+
+		printf("Copy RAM to Flash\r\n");
+		ret = isp_ram_to_flash(0x10000800, i, 256);
+		if (ret) {
+			printf("isp_ram_to_flash() return %d\r\n", ret);
+			exit(0);
+		}
 	}
 
-#if 1
-	printf("Memory write (Write Segment Data)\r\n");
-	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		//
-		packet.data[0] = 0x23; // Command
-		packet.data[1] = 0x50; // Index (Minor)
-		packet.data[2] = 0x1f; // Index (Major)
-		packet.data[3] = 0x01; // Sub Index
-		packet.data[4] = 0x5A; // Data[0]
-		packet.data[5] = 0x5A; // Data[1]
-		packet.data[6] = 0xA5; // Data[2]
-		packet.data[7] = 0xA5; // Data[3]
-		
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-#else
-	printf("Memory write (Write Segment Data)\r\n");
-	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		//
-		packet.data[0] = 0x60; // Command
-		packet.data[1] = 0xA5; // Index (Minor)
-		packet.data[2] = 0x5A; // Index (Major)
-		packet.data[3] = 0xA5; // Sub Index
-		packet.data[4] = 0x5A; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-#endif
-
-	// http://host.lpcware.com/content/forum/ccan-isp-write-ram-failure
-
-	printf("\r\n\r\nREADING!!!!\r\n\r\n");
-
-	printf("Memory Read Address (set)\r\n");
-	// Send
-	{
-		can_t packet;
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Memory Read Address (set)
-		packet.data[0] = 0x23; // Command
-		packet.data[1] = 0x10; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x10; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x10; // Data[3]
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-
-	printf("Memory Read Length (set)\r\n");
-	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Memory Read Length (set)
-		packet.data[0] = 0x23; // Command
-		packet.data[1] = 0x11; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x04; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-	
-	printf("Read memory / Read Init Data\r\n");
-	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Read memory
-		packet.data[0] = 0x40; // Command
-		packet.data[1] = 0x50; // Index (Minor)
-		packet.data[2] = 0x1F; // Index (Major)
-		packet.data[3] = 0x01; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		//printf("ANSWER: %s\r\n", data);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-	
-	printf("Read memory / Read SegmentData %d\r\n", i);
-	// Send
-	{
-		can_t packet;
-		
-		packet.addr = 0x600 + 0x7D;
-		packet.len = 8;
-		// Read memory
-		packet.data[0] = 0x60; // Command
-		packet.data[1] = 0x00; // Index (Minor)
-		packet.data[2] = 0x00; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		
-		can_send(&packet);
-	}
-	// Receive:
-	{
-		memset(data, 0, sizeof(data));
-		com_getblock_simple(&com, data, sizeof(data), &size);
-		
-		can_t packet;
-		can_decode(data, &packet);
-	}
-
-#if 0
-		// DEVICE TYPE
-		packet.data[0] = 0x40; // Command
-		packet.data[1] = 0x00; // Index (Minor)
-		packet.data[2] = 0x10; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-#elif 0
-		// Part Identification Number
-		packet.data[0] = 0x40; // Command
-		packet.data[1] = 0x18; // Index (Minor)
-		packet.data[2] = 0x10; // Index (Major)
-		packet.data[3] = 0x02; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-#elif 0
-		// Memory Read Address
-		packet.data[0] = 0x40; // Command
-		packet.data[1] = 0x10; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-#elif 0
-		// Memory Read Address (set)
-		packet.data[0] = 0x23; // Command
-		packet.data[1] = 0x10; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x10; // Data[3]
-#elif 0
-		// Memory Read Length
-		packet.data[0] = 0x40; // Command
-		packet.data[1] = 0x11; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-#elif 0
-		// Memory Read Length (set)
-		packet.data[0] = 0x23; // Command
-		packet.data[1] = 0x11; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x04; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-#elif 0
-		// Read memory
-		packet.data[0] = 0x40; // Command
-		packet.data[1] = 0x50; // Index (Minor)
-		packet.data[2] = 0x1F; // Index (Major)
-		packet.data[3] = 0x01; // Sub Index
-		packet.data[4] = 0x00; // Data[0]
-		packet.data[5] = 0x00; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-		
-		//???
-		// 80 1f 50 01 11 00 09 06
-		// 80 - Abort
-		// Data: 06090011
-		// 0906 - Additional code
-		// 00 - Error code 
-		// 06 - Error class
-#elif 0
-		// Unlock
-		packet.data[0] = 0x2B; // Command
-		packet.data[1] = 0x00; // Index (Minor)
-		packet.data[2] = 0x50; // Index (Major)
-		packet.data[3] = 0x00; // Sub Index
-		packet.data[4] = 0x5A; // Data[0]
-		packet.data[5] = 0x5A; // Data[1]
-		packet.data[6] = 0x00; // Data[2]
-		packet.data[7] = 0x00; // Data[3]
-#endif
-	
-
-	
 	// Exit:
 ret_ok:
 	ret = 0;
