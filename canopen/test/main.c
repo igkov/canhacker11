@@ -1,12 +1,3 @@
-/*
-	CANHACKER port
-	
-	Портирование проекта CANHACKER на платформу LPC11Cxx.
-	
-	igorkov / fsp@igorkov.org / 2016
-
-	Site: igorkov.org/bcomp11
- */
 #include <stdint.h>
 #include <LPC11xx.H>
 

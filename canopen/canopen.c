@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
 	unsigned char frw[0x8000]; // firmware image
 	unsigned long size = 0;
 	uint32_t id = 0;
+	uint8_t last_sector = 0;
 	int ret;
 	int i;
 	int speed = '3'; // 100kbit/s
@@ -226,22 +227,27 @@ no_init:
 	case 0x1421102B:
 		printf("Controller type: LPC11C12FBD48/301\r\n");
 		size = 0x4000;
+		last_sector = 3;
 		break;
 	case 0x1440102B:
 		printf("Controller type: LPC11C14FBD48/301\r\n");
 		size = 0x8000;
+		last_sector = 7;
 		break;
 	case 0x1431102B:
 		printf("Controller type: LPC11C22FBD48/301\r\n");
 		size = 0x4000;
+		last_sector = 3;
 		break;
 	case 0x1430102B:
 		printf("Controller type: LPC11C24FBD48/301!\r\n");
 		size = 0x8000;
+		last_sector = 7;
 		break;
 	default:
 		printf("Controller type: unknown!\r\n");
 		size = 0x0000;
+		last_sector = 0;
 		goto ret_uninit;
 	}
 
@@ -290,13 +296,13 @@ no_init:
 	}
 	
 	printf("Erase Prepare\r\n");
-	ret = isp_prepare(0, 7);
+	ret = isp_prepare(0, last_sector);
 	if (ret) {
 		printf("isp_prepare() return %d\r\n", ret);
 	}
 
 	printf("Erase\r\n");
-	ret = isp_erase(0, 7);
+	ret = isp_erase(0, last_sector);
 	if (ret) {
 		printf("isp_erase() return %d\r\n", ret);
 	}
@@ -312,7 +318,7 @@ no_init:
 			exit(0);
 		}
 		//printf("Write Prepare\r\n");
-		ret = isp_prepare(0, 7);
+		ret = isp_prepare(0, last_sector);
 		if (ret) {
 			printf("isp_prepare() return %d\r\n", ret);
 			exit(0);
