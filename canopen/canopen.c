@@ -272,7 +272,14 @@ no_init:
 		
 		// Set crc
 		printf("Setup CRC in firmware image...\r\n");
-		((uint32_t*)frw)[7] = -(((uint32_t*)frw)[0] + ((uint32_t*)frw)[1] + ((uint32_t*)frw)[2] + ((uint32_t*)frw)[3] + ((uint32_t*)frw)[4] + ((uint32_t*)frw)[5] + ((uint32_t*)frw)[6]);
+		((uint32_t*)frw)[7] = 
+			-( ((uint32_t*)frw)[0] + 
+			   ((uint32_t*)frw)[1] + 
+			   ((uint32_t*)frw)[2] + 
+			   ((uint32_t*)frw)[3] + 
+			   ((uint32_t*)frw)[4] + 
+			   ((uint32_t*)frw)[5] + 
+			   ((uint32_t*)frw)[6]    );
 		printf("CRC = %08x;\r\n", ((uint32_t*)frw)[7]);
 	}
 	

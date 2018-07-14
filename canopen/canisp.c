@@ -288,6 +288,7 @@ int sdo_seq_write(uint16_t index, uint8_t subindex, int len, uint8_t *data) {
 		// 
 		// Почему-то загрузчик принимает только по 4 байта в каждой посылке...
 		// 
+		//int size = (len - offset) > 7 ? 7 : (len - offset);
 		int size = (len - offset) > 4 ? 4 : (len - offset);
 		
 		memset(&packet, 0x00, sizeof(packet));
