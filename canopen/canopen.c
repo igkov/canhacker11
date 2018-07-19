@@ -3,6 +3,7 @@
 	
 	Тестовое приложение для работы по интерфейсу CANOPEN.
 	Зачатки модуля программирования для LPC11Cxx.
+	Модуль работает через интерфейс CANHACKER-а.
 	
 	igorkov / fsp@igorkov.org / 2016
  */
@@ -215,12 +216,11 @@ no_init:
 
 	printf("Read Device ID\r\n");
 	{
-		uint32_t id;
 		ret = isp_get_partid(&id);
 		if (ret) {
 			printf("isp_get_partid() return %d\r\n", ret);
 		}
-		printf("id = %08x\r\n", id);
+		printf("id = 0x%08X\r\n", id);
 	}
 	
 	switch (id) {

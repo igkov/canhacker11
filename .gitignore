@@ -11,3 +11,5 @@ comlog/*.txt
 comlog/*.exe
 speed/*.exe
 canopen/*.exe
+canopen/*.bin
+canopen/*.txt
